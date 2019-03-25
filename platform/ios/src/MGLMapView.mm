@@ -194,7 +194,7 @@ public:
     NSString *viewReuseIdentifier;
 };
 
-@interface UIApplication (MGLApplicationConforming) <MGLApplication>
+@interface UIApplication (MGLApplicationConformation) <MGLApplication>
 @end
 
 
@@ -277,8 +277,8 @@ public:
 
 // Application properties
 @property (nonatomic) id<MGLApplication> application;
-@property (nonatomic) BOOL rendererWasFlushed;
 @property (nonatomic) CADisplayLink *displayLink;
+@property (nonatomic) UIImage *lastSnapshotImage;
 
 
 - (mbgl::Map &)mbglMap;
@@ -473,12 +473,11 @@ public:
 
         if (application) {
             [center addObserver:self selector:@selector(willResignActive:) name:UIApplicationWillResignActiveNotification object:application];
-            [center addObserver:self selector:@selector(sleepGL:) name:UIApplicationDidEnterBackgroundNotification object:application];
-            [center addObserver:self selector:@selector(wakeGL:) name:UIApplicationWillEnterForegroundNotification object:application];
-            [center addObserver:self selector:@selector(wakeGL:) name:UIApplicationDidBecomeActiveNotification object:application];
+            [center addObserver:self selector:@selector(didEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:application];
+            [center addObserver:self selector:@selector(willEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:application];
+            [center addObserver:self selector:@selector(didBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:application];
             [center addObserver:self selector:@selector(willTerminate) name:UIApplicationWillTerminateNotification object:application];
             [center addObserver:self selector:@selector(didReceiveMemoryWarning) name:UIApplicationDidReceiveMemoryWarningNotification object:application];
-
         }
     }
 }
@@ -864,8 +863,12 @@ public:
 - (void)didReceiveMemoryWarning
 {
     MGLAssertIsMainThread();
+    self.lastSnapshotImage = nil;
 
-    _rendererFrontend->reduceMemoryUse();
+    if (_rendererFrontend)
+    {
+        _rendererFrontend->reduceMemoryUse();
+    }
 }
 
 #pragma mark - Layout -
@@ -1015,7 +1018,7 @@ public:
 // This is the delegate of the GLKView object's display call.
 - (void)glkView:(__unused GLKView *)view drawInRect:(__unused CGRect)rect
 {
-    if ( ! self.dormant || ! _rendererFrontend)
+    if (!self.dormant && _rendererFrontend)
     {
         _rendererFrontend->render();
     }
@@ -1235,18 +1238,28 @@ public:
 - (void)validateDisplayLink
 {
     BOOL isVisible = self.superview && self.window;
+    
     if (isVisible && ! _displayLink)
     {
+        BOOL active = (self.application.applicationState == UIApplicationStateActive);
+
         if (_mbglMap && self.mbglMap.getMapOptions().constrainMode() == mbgl::ConstrainMode::None)
         {
             self.mbglMap.setConstrainMode(mbgl::ConstrainMode::HeightOnly);
         }
-
+        
         _displayLink = [self.window.screen displayLinkWithTarget:self selector:@selector(updateFromDisplayLink:)];
+        
+        _displayLink.paused = !active;
+        
         [self updateDisplayLinkPreferredFramesPerSecond];
         [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
-        _needsDisplayRefresh = YES;
-        [self updateFromDisplayLink:_displayLink];
+        
+        if (active)
+        {
+            _needsDisplayRefresh = YES;
+            [self updateFromDisplayLink:_displayLink];
+        }
     }
     else if ( ! isVisible && _displayLink)
     {
@@ -1498,16 +1511,59 @@ public:
 
 - (void)willResignActive:(__unused NSNotification *)notification
 {
+    [self resignGL];
 }
 
-- (void)sleepGL:(__unused NSNotification *)notification
+- (void)didEnterBackground:(__unused NSNotification *)notification
+{
+    [self sleepGL:notification];
+}
+
+- (void)willEnterForeground:(__unused NSNotification *)notification
+{
+    [self wakeGL:notification];
+}
+
+- (void)didBecomeActive:(__unused NSNotification *)notification
+{
+    [self resumeGL];
+}
+
+- (BOOL)supportBackgroundRendering
 {
     // If this view targets an external display, such as AirPlay or CarPlay, we
     // can safely continue to render OpenGL content without tripping
     // gpus_ReturnNotPermittedKillClient in libGPUSupportMercury, because the
     // external connection keeps the application from truly receding to the
     // background.
-    if (self.window.screen != [UIScreen mainScreen])
+    return (self.window.screen != [UIScreen mainScreen]);
+}
+
+- (void)resignGL
+{
+    if ([self supportBackgroundRendering])
+    {
+        return;
+    }
+    
+    // Pausing on resign active is a change in behaviour.
+    self.displayLink.paused = YES;
+
+    // Take the GL snapshot before entering the background, since this triggers
+    // a render
+    self.lastSnapshotImage = self.glView.snapshot;
+    
+    // For OpenGL this calls glFinish as recommended in
+    // https://developer.apple.com/library/archive/documentation/3DDrawing/Conceptual/OpenGLES_ProgrammingGuide/ImplementingaMultitasking-awareOpenGLESApplication/ImplementingaMultitasking-awareOpenGLESApplication.html#//apple_ref/doc/uid/TP40008793-CH5-SW1
+    if (_rendererFrontend)
+    {
+        _rendererFrontend->flush();
+    }
+}
+
+- (void)sleepGL:(__unused NSNotification *)notification
+{
+    if ([self supportBackgroundRendering])
     {
         return;
     }
@@ -1520,8 +1576,11 @@ public:
     // Compromise position: release everything but currently rendering tiles
     // A possible improvement would be to store a copy of the GL buffers that we could use to rapidly
     // restart, but that we could also discard in response to a memory warning.
-    _rendererFrontend->reduceMemoryUse();
-
+    if (_rendererFrontend)
+    {
+        _rendererFrontend->reduceMemoryUse();
+    }
+    
     if ( ! self.dormant)
     {
         self.dormant = YES;
@@ -1529,8 +1588,6 @@ public:
         [self validateLocationServices];
 
         [MGLMapboxEvents flush];
-
-        _displayLink.paused = YES;
 
         if ( ! self.glSnapshotView)
         {
@@ -1540,7 +1597,7 @@ public:
             [self insertSubview:self.glSnapshotView aboveSubview:self.glView];
         }
 
-        self.glSnapshotView.image = self.glView.snapshot;
+        self.glSnapshotView.image = self.lastSnapshotImage;
         self.glSnapshotView.hidden = NO;
 
         if (self.debugMask && [self.glSnapshotView.subviews count] == 0)
@@ -1553,6 +1610,11 @@ public:
 
         [self.glView deleteDrawable];
     }
+    
+    if (_rendererFrontend)
+    {
+        _rendererFrontend->flush();
+    }
 }
 
 - (void)wakeGL:(__unused NSNotification *)notification
@@ -1560,7 +1622,9 @@ public:
     MGLLogInfo(@"Entering foreground.");
     MGLAssertIsMainThread();
 
-    if (self.dormant && self.application.applicationState != UIApplicationStateBackground)
+    NSAssert(self.application.applicationState != UIApplicationStateActive, @"Should transition from background");
+    
+    if (self.dormant)
     {
         self.dormant = NO;
 
@@ -1572,8 +1636,8 @@ public:
 
         [self.glView bindDrawable];
 
-        _displayLink.paused = NO;
-
+        [self validateDisplayLink];
+        
         [self validateLocationServices];
 
         [MGLMapboxEvents pushTurnstileEvent];
@@ -1581,10 +1645,22 @@ public:
     }
 }
 
+- (void)resumeGL
+{
+    self.lastSnapshotImage = nil;
+
+    // Only restart the display link if we're not hidden
+    self.displayLink.paused = self.hidden;
+}
+
+
 - (void)setHidden:(BOOL)hidden
 {
     super.hidden = hidden;
-    _displayLink.paused = hidden;
+    
+    BOOL inactive = (self.application.applicationState != UIApplicationStateActive);
+    
+    self.displayLink.paused = hidden || inactive;
 }
 
 - (void)tintColorDidChange
