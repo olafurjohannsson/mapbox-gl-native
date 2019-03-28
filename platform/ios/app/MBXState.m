@@ -3,7 +3,7 @@
 NSString *const MBXCamera = @"MBXCamera";
 NSString *const MBXUserTrackingMode = @"MBXUserTrackingMode";
 NSString *const MBXShowsUserLocation = @"MBXShowsUserLocation";
-NSString *const MBXShowsDebugMask = @"MBXDebugMask";
+NSString *const MBXDebugMask = @"MBXDebugMask";
 NSString *const MBXShowsZoomLevelHUD =  @"MBXShowsZoomLevelHUD";
 NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
 
@@ -15,7 +15,7 @@ NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
         NSMutableDictionary *dictionary = [NSMutableDictionary dictionaryWithObjectsAndKeys: @"", MBXCamera,
             @"", MBXUserTrackingMode,
             @"", MBXShowsUserLocation,
-            @"", MBXShowsDebugMask,
+            @"", MBXDebugMask,
             @"", MBXShowsZoomLevelHUD,
             @"", MBXShowsTimeFrameGraph,
             nil];
@@ -34,7 +34,7 @@ NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
     [defaults synchronize];
 }
 
-- (void)saveUserTrackingModeState:(MGLUserTrackingMode)trackingMode; {
+- (void)saveUserTrackingModeState:(NSInteger)trackingMode; {
     _userTrackingMode = trackingMode;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [self.state setValue:@(trackingMode) forKey:@"MBXUserTrackingMode"];
@@ -50,11 +50,11 @@ NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
     [defaults synchronize];
 }
 
-- (void)saveDebugMaskState:(NSInteger)showDebugMask {
-    _showsDebugMask = showDebugMask;
+- (void)saveDebugMaskState:(NSInteger)debugMask {
+    _debugMask = debugMask;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    [self.state setValue:@(showDebugMask) forKey:@"MBXDebugMask"];
-    [defaults setInteger:showDebugMask forKey:@"MBXDebugMask"];
+    [self.state setValue:@(debugMask) forKey:@"MBXDebugMask"];
+    [defaults setInteger:debugMask forKey:@"MBXDebugMask"];
     [defaults synchronize];
 }
 

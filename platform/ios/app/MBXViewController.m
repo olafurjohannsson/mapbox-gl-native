@@ -176,12 +176,11 @@ CLLocationCoordinate2D randomWorldCoordinate() {
     [[MBXStateManager sharedManager].currentState saveShowsUserLocationState:NO];
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveState:) name:UIApplicationDidEnterBackgroundNotification object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(restoreState:) name:UIApplicationWillEnterForegroundNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveState:) name:UIApplicationWillTerminateNotification object:nil];
 
-//    [self restoreState:nil];
+    [self restoreState:[MBXStateManager sharedManager].currentState];
 
-    self.debugLoggingEnabled = [[MBXStateManager sharedManager].currentState.state objectForKey:MBXCamera];
+    self.debugLoggingEnabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"MGLMapboxMetricsDebugLoggingEnabled"];
 
     self.mapView.showsScale = YES;
     self.mapView.showsUserHeadingIndicator = YES;
@@ -227,47 +226,30 @@ CLLocationCoordinate2D randomWorldCoordinate() {
 
 - (void)saveState:(__unused NSNotification *)notification
 {
-    [[MBXStateManager sharedManager].currentState saveMapCameraState:self.mapView.camera];
-    [[MBXStateManager sharedManager].currentState saveUserTrackingModeState:self.mapView.userTrackingMode];
-    [[MBXStateManager sharedManager].currentState saveDebugMaskState:self.mapView.debugMask];
-    [[MBXStateManager sharedManager].currentState saveZoomLevelHUDState:self.mapInfoHUDEnabled];
-    [[MBXStateManager sharedManager].currentState saveDisplayTimeFrameGraphState:self.frameTimeGraphEnabled];
+    MBXState *currentState = [MBXStateManager sharedManager].currentState;
+    [currentState saveMapCameraState:self.mapView.camera];
+    [currentState saveShowsUserLocationState:self.mapView.showsUserLocation];
+    [currentState saveUserTrackingModeState:self.mapView.userTrackingMode];
+    [currentState saveDebugMaskState:self.mapView.debugMask];
+    [currentState saveZoomLevelHUDState:self.mapInfoHUDEnabled];
+    [currentState saveDisplayTimeFrameGraphState:self.frameTimeGraphEnabled];
 }
 
-- (void)restoreState:(__unused NSNotification *)notification
+- (void)restoreState:(MBXState*)state
 {
-    MGLMapCamera *savedCamera = [MBXStateManager sharedManager].currentState.camera;
-    NSInteger savedTrackingMode = [MBXStateManager sharedManager].currentState.userTrackingMode;
-    BOOL savedShowsUserLocation = [MBXStateManager sharedManager].currentState.showsUserLocation;
-    NSInteger *savedDebugMask = [MBXStateManager sharedManager].currentState.showsDebugMask;
-    BOOL savedShowZoomLevelHUD = [MBXStateManager sharedManager].currentState.showsZoomLevelHUD;
-    BOOL savedShowsTimeFrameGraph = [MBXStateManager sharedManager].currentState.showsTimeFrameGraph;
-
-    if (savedCamera)
+    if (state.camera)
     {
-        self.mapView.camera = savedCamera;
+        self.mapView.camera = state.camera;
     }
 
-    if (savedTrackingMode >= 0 &&
-        savedTrackingMode >= MGLUserTrackingModeNone &&
-        savedTrackingMode <= MGLUserTrackingModeFollowWithCourse)
-    {
-        self.mapView.userTrackingMode = savedTrackingMode;
-    }
+    self.mapView.showsUserLocation = state.showsUserLocation;
+    self.mapView.userTrackingMode = state.userTrackingMode;
+    self.mapView.debugMask = state.debugMask;
+    self.mapInfoHUDEnabled = state.showsZoomLevelHUD;
 
-    self.mapView.showsUserLocation = savedShowsUserLocation;
-
-
-    if (savedDebugMask >= 0)
-    {
-        self.mapView.debugMask = savedDebugMask;
-    }
-
-
-    self.mapInfoHUDEnabled = savedShowZoomLevelHUD ? YES : NO;
     [self updateHUD];
 
-    if (savedShowsTimeFrameGraph == YES)
+    if (state.showsTimeFrameGraph == YES)
     {
         self.frameTimeGraphEnabled = YES;
         self.frameTimeGraphView.hidden = NO;

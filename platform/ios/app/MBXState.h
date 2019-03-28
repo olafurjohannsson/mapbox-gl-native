@@ -15,16 +15,16 @@ FOUNDATION_EXTERN NSString *const MBXShowsTimeFrameGraph;
 @property (nonatomic, nullable) NSMutableDictionary *state;
 
 @property (nonatomic, nullable) MGLMapCamera *camera;
-@property (nonatomic, nullable) MGLUserTrackingMode *userTrackingMode;
+@property (nonatomic) NSInteger userTrackingMode;
 @property (nonatomic) BOOL showsUserLocation;
-@property (nonatomic) BOOL showsDebugMask;
+@property (nonatomic) NSInteger debugMask;
 @property (nonatomic) BOOL showsZoomLevelHUD;
 @property (nonatomic) BOOL showsTimeFrameGraph;
 
 - (void)saveMapCameraState:(MGLMapCamera *)camera;
-- (void)saveUserTrackingModeState:(MGLUserTrackingMode)trackingMode;
+- (void)saveUserTrackingModeState:(NSInteger)trackingMode;
 - (void)saveShowsUserLocationState:(BOOL)showUserLocation;
-- (void)saveDebugMaskState:(NSInteger)showDebugMask;
+- (void)saveDebugMaskState:(NSInteger)debugMask;
 - (void)saveZoomLevelHUDState:(BOOL)showsZoomLevelHUD;
 - (void)saveDisplayTimeFrameGraphState:(BOOL)displayTimeFramGraphState;
 
