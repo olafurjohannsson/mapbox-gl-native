@@ -26,6 +26,7 @@ NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
 }
 
 - (void)saveMapCameraState:(MGLMapCamera *)camera {
+    _camera = camera;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSData *archivedCamera = [NSKeyedArchiver archivedDataWithRootObject:camera];
     [self.state setValue:camera forKey:@"MBXCamera"];
@@ -33,7 +34,8 @@ NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
     [defaults synchronize];
 }
 
-- (void)saveUserTrackingModeState:(NSInteger)trackingMode; {
+- (void)saveUserTrackingModeState:(MGLUserTrackingMode)trackingMode; {
+    _userTrackingMode = trackingMode;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [self.state setValue:@(trackingMode) forKey:@"MBXUserTrackingMode"];
     [defaults setInteger:trackingMode forKey:@"MBXUserTrackingMode"];
@@ -41,6 +43,7 @@ NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
 }
 
 - (void)saveShowsUserLocationState:(BOOL)showUserLocation {
+    _showsUserLocation = showUserLocation;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [self.state setValue:@(showUserLocation) forKey:@"MBXShowsUserLocation"];
     [defaults setBool:showUserLocation forKey:@"MBXShowsUserLocation"];
@@ -48,6 +51,7 @@ NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
 }
 
 - (void)saveDebugMaskState:(NSInteger)showDebugMask {
+    _showsDebugMask = showDebugMask;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [self.state setValue:@(showDebugMask) forKey:@"MBXDebugMask"];
     [defaults setInteger:showDebugMask forKey:@"MBXDebugMask"];
@@ -55,14 +59,15 @@ NSString *const MBXShowsTimeFrameGraph = @"MBXShowsFrameTimeGraph";
 }
 
 - (void)saveZoomLevelHUDState:(BOOL)showsZoomLevelHUD {
+    _showsZoomLevelHUD = showsZoomLevelHUD;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [self.state setValue:@(showsZoomLevelHUD) forKey:@"MBXShowsZoomLevelHUD"];
-    _showsZoomLevelHUD = &showsZoomLevelHUD;
     [defaults setBool:showsZoomLevelHUD forKey:@"MBXShowsZoomLevelHUD"];
     [defaults synchronize];
 }
 
 - (void)saveDisplayTimeFrameGraphState:(BOOL)displayTimeFramGraphState {
+    _showsTimeFrameGraph = displayTimeFramGraphState;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [self.state setValue:@(displayTimeFramGraphState) forKey:@"MBXShowsFrameTimeGraph"];
     [defaults setBool:displayTimeFramGraphState forKey:@"MBXShowsFrameTimeGraph"];
