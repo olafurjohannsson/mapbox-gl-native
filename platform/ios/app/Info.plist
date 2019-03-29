@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>MGLMapboxAccessToken</key>
-	<string>pk.feedcafedeadbeefbadebede</string>
+	<string>INSERT_ACCESS_TOKEN</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
