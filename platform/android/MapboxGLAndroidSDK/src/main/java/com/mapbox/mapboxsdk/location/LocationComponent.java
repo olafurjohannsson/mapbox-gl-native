@@ -669,7 +669,6 @@ public final class LocationComponent {
   @SuppressLint("MissingPermission")
   public void applyStyle(@NonNull final LocationComponentOptions options) {
     checkActivationState();
-    Logger.d(TAG, "LocationComponent applyStyle()");
     LocationComponent.this.options = options;
     if (mapboxMap.getStyle() != null) {
       locationLayerController.applyStyle(options);
@@ -1073,7 +1072,6 @@ public final class LocationComponent {
    */
   public void onStart() {
     isComponentStarted = true;
-    Logger.d(TAG, "onStart()");
     onLocationLayerStart();
   }
 
@@ -1102,15 +1100,8 @@ public final class LocationComponent {
    * Internal use.
    */
   public void onFinishLoadingStyle() {
-    Logger.d(TAG, "onFinishLoadingStyle");
-    Logger.d(TAG, "isComponentInitialized = " + isComponentInitialized);
-
     if (isComponentInitialized) {
       style = mapboxMap.getStyle();
-      Logger.d(TAG, "isComponentInitialized == true && options.pulseAlpha() = " + options.pulseAlpha());
-      Logger.d(TAG, "isComponentInitialized == true && options.pulseSingleDuration() = " + options.pulseSingleDuration());
-      Logger.d(TAG, "isComponentInitialized == true && options.pulseColor() = " + options.pulseColor());
-
       locationLayerController.initializeComponents(style, options);
       locationCameraController.initializeOptions(options);
       onLocationLayerStart();
@@ -1129,13 +1120,6 @@ public final class LocationComponent {
       mapboxMap.addOnCameraIdleListener(onCameraIdleListener);
       if (options.enableStaleState()) {
         staleStateManager.onStart();
-      }
-      Logger.d(TAG, "onLocationLayerStart: options.pulseEnabled() = " + options.pulseEnabled());
-      if (options.pulseEnabled()) {
-        Logger.d(TAG, "onLocationLayerStart: locationAnimatorCoordinator.startLocationCirclePulsing(options, mapboxMap)");
-        Logger.d(TAG, "onLocationLayerStart: options.pulseColor() = " + options.pulseColor());
-        Logger.d(TAG, "onLocationLayerStart: options.pulseSingleDuration() = " + options.pulseSingleDuration());
-        locationAnimatorCoordinator.startLocationCirclePulsing(options, mapboxMap);
       }
     }
 
@@ -1170,11 +1154,6 @@ public final class LocationComponent {
     if (locationEngine != null) {
       locationEngine.removeLocationUpdates(currentLocationEngineListener);
     }
-    if (options.pulseEnabled()) {
-      Logger.d(TAG, "onLocationLayerStop: options.pulseEnabled()");
-      Logger.d(TAG, "onLocationLayerStop: locationAnimatorCoordinator.stopPulsingAnimation()");
-      locationAnimatorCoordinator.stopPulsingAnimation();
-    }
     mapboxMap.removeOnCameraMoveListener(onCameraMoveListener);
     mapboxMap.removeOnCameraIdleListener(onCameraIdleListener);
   }
@@ -1207,7 +1186,7 @@ public final class LocationComponent {
     locationAnimatorCoordinator = new LocationAnimatorCoordinator(
       mapboxMap.getProjection(),
       MapboxAnimatorSetProvider.getInstance(),
-      MapboxAnimatorProvider.getInstance()
+      MapboxAnimatorProvider.getInstance(), options
     );
     locationAnimatorCoordinator.setTrackingAnimationDurationMultiplier(options
       .trackingAnimationDurationMultiplier());
@@ -1318,7 +1297,6 @@ public final class LocationComponent {
   }
 
   private void showLocationLayerIfHidden() {
-    Logger.d(TAG, "showLocationLayerIfHidden()");
     boolean isLocationLayerHidden = locationLayerController.isHidden();
     if (isEnabled && isComponentStarted && isLocationLayerHidden) {
       locationLayerController.show();

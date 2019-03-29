@@ -61,32 +61,15 @@ public class PulsingLocationCircleAnimator extends MapboxAnimator  {
     return null;
   }
 
-  public void startPulsingAnimation() {
-    createValueAnimator();
-    startValueAnimator();
-  }
-
-  private void createValueAnimator() {
+  public ValueAnimator getValueAnimator() {
     if (mapboxMap.getStyle().getLayer(PROPERTY_PULSING_CIRCLE_LAYER) != null) {
-      Logger.d(TAG, "mapboxMap.getStyle().getLayer(PROPERTY_PULSING_CIRCLE_LAYER) != null");
-      Logger.d(TAG, "locationComponentOptions.pulseSingleDuration() = " + locationComponentOptions.pulseSingleDuration());
-      pulsingCircleLayer = mapboxMap.getStyle().getLayer(PROPERTY_PULSING_CIRCLE_LAYER);
       animator = ValueAnimator.ofFloat(0f, PULSING_CIRCLE_RADIUS);
       animator.setDuration((long) locationComponentOptions.pulseSingleDuration());
       animator.setRepeatMode(ValueAnimator.RESTART);
       animator.setRepeatCount(ValueAnimator.INFINITE);
       animator.setInterpolator(interpolatorToUse);
-      animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-        @Override
-        public void onAnimationUpdate(ValueAnimator valueAnimator) {
-          pulsingCircleLayer.setProperties(circleRadius((Float) valueAnimator.getAnimatedValue()));
-          if (locationComponentOptions.pulsingCircleFadeEnabled()) {
-            pulsingCircleLayer.setProperties(circleOpacity(1 - opacityCounter * .01f));
-            opacityCounter++;
-          }
-        }
-      });
     }
+    return animator;
   }
 
   private void startValueAnimator() {
@@ -121,7 +104,7 @@ public class PulsingLocationCircleAnimator extends MapboxAnimator  {
   public void resumePulsingAnimation() {
     if (animator != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       animator.resume();
-//      createValueAnimator();
+//      getValueAnimator();
 //      startValueAnimator();
     }
   }
