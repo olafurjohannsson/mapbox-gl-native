@@ -959,10 +959,6 @@ jobs:
       - install-dependencies
       - install-ios-packaging-dependencies
       - run:
-          name: Insert Mapbox access token for iosapp
-          command: |
-            plutil -replace MGLMapboxAccessToken -string ${MAPBOX_ACCESS_TOKEN_FAKE} "$TARGET_BUILD_DIR/$INFOPLIST_PATH"
-      - run:
           name: Build dynamic framework for device and simulator
           command: make iframework
           no_output_timeout: 5m
