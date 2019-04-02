@@ -7,6 +7,7 @@ import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 
+import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.style.layers.Property;
 import com.mapbox.mapboxsdk.style.layers.TransitionOptions;
 import com.mapbox.mapboxsdk.utils.ColorUtils;
@@ -22,6 +23,8 @@ public class Light {
 
   @Keep
   private long nativePtr;
+
+  private static final String TAG = "Mbgl-Light";
 
   /**
    * Creates a Light.
@@ -192,7 +195,7 @@ public class Light {
   }
 
   private void checkThread(){
-    ThreadUtils.checkThread("Light");
+    ThreadUtils.checkThread(Mapbox.getApplicationContext(), TAG);
   }
 
   @Keep

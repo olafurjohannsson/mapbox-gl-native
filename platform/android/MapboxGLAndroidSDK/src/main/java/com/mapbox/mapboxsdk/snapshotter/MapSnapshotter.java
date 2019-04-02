@@ -25,12 +25,15 @@ import com.mapbox.mapboxsdk.attribution.AttributionLayout;
 import com.mapbox.mapboxsdk.attribution.AttributionMeasure;
 import com.mapbox.mapboxsdk.attribution.AttributionParser;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.log.Logger;
 import com.mapbox.mapboxsdk.maps.TelemetryDefinition;
 import com.mapbox.mapboxsdk.storage.FileSource;
 import com.mapbox.mapboxsdk.utils.ThreadUtils;
+
+import java.util.Map;
 
 /**
  * The map snapshotter creates a large of the map, rendered
@@ -560,7 +563,7 @@ public class MapSnapshotter {
   }
 
   private void checkThread() {
-    ThreadUtils.checkThread("MapSnapshotter");
+    ThreadUtils.checkThread(Mapbox.getApplicationContext(), TAG);
   }
 
   protected void reset() {
