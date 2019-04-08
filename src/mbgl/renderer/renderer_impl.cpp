@@ -248,25 +248,23 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
         for (const auto& layerImpl : *layerImpls) {
             RenderLayer* layer = getRenderLayer(layerImpl->id);
             const auto* layerInfo = layerImpl->getTypeInfo();
-            bool layerNeedsRendering = layer->needsRendering(zoomHistory.lastZoom);
+            const bool layerNeedsRendering = layer->needsRendering(zoomHistory.lastZoom);
+            if (!layerNeedsRendering) continue;
 
             staticData->has3D = (staticData->has3D || layerInfo->pass3d == LayerTypeInfo::Pass3D::Required);
 
             if (layerInfo->source != LayerTypeInfo::Source::NotRequired) {
                 if (layerImpl->source == sourceImpl->id) {
-                    sourceNeedsRendering |= layerNeedsRendering;
+                    sourceNeedsRendering = true;
                     sourceNeedsRelayout = (sourceNeedsRelayout || hasImageDiff || hasLayoutDifference(layerDiff, layerImpl->id));
                     filteredLayersForSource.push_back(layerImpl);
-
-                    if (layerNeedsRendering) {
-                        renderItems.emplace_back(*layer, source);
-                    }
+                    renderItems.emplace_back(*layer, source);
                 }
                 continue;
             } 
 
             // Handle layers without source.
-            if (layerNeedsRendering && sourceImpl.get() == sourceImpls->at(0).get()) {
+            if (sourceImpl.get() == sourceImpls->at(0).get()) {
                 if (!backend.contextIsShared() && layerImpl.get() == layerImpls->at(0).get()) {
                     const auto& solidBackground = layer->getSolidBackground();
                     if (solidBackground) {
